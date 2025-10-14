@@ -3,6 +3,7 @@ import allure
 from helpers.courier_generator import CourierGenerator
 from helpers.api_client import ApiClient
 from helpers.data_cleaner import DataCleaner
+from constants.error_messages import CourierErrorMessages, ResponseMessages
 
 @allure.epic("Courier API")
 @allure.feature("Создание курьера")
@@ -23,11 +24,12 @@ class TestCreateCourier:
                 f"Response: {response.text}"
             )
         
-        with allure.step("Проверить что успешный запрос возвращает {'ok': true}'"):
+        with allure.step("Проверить что успешный запрос возвращает {'ok': true}"):
             response_data = response.json()
             assert response_data == {"ok": True}, (
-                f"Ожидалось {{'ok': true}}, получено: {response_data}"
+                f"{ResponseMessages.EXPECTED_OK_TRUE}, получено: {response_data}"
             )
+
         DataCleaner.delete_courier(payload['login'], payload['password'])
         
     @allure.title("Негативные кейсы: cоздание курьера без обязательного поля: {missing_field}")
@@ -43,17 +45,16 @@ class TestCreateCourier:
         with allure.step("Отправить запрос с неполными данными"):
             response = ApiClient.post_request_create_courier(payload)
 
-        with allure.step("Проверить статус код ответа"):
+        with allure.step("Проверить ошибку валидации - статус 400"):
             assert response.status_code == 400, (
-                f"Ожидался статус код 400, получен {response.status_code}. "
-                f"Response: {response.text}"
+                f"Ожидался статус код 400, получен {response.status_code}"
             )
+        
         with allure.step("Проверить сообщение об ошибке"):
             response_data = response.json()
             error_message = response_data.get("message", "")
-            expected_message = "Недостаточно данных для создания учетной записи"
-            assert error_message == expected_message, (
-                f"Ожидалось сообщение: '{expected_message}', "
+            assert error_message == CourierErrorMessages.NOT_ENOUGH_DATA_FOR_CREATE, (
+                f"Ожидалось сообщение: '{CourierErrorMessages.NOT_ENOUGH_DATA_FOR_CREATE}', "
                 f"получено: '{error_message}'"
             )
               
@@ -74,8 +75,7 @@ class TestCreateCourier:
         with allure.step("Проверить сообщение об ошибке"):
             response_data = response.json()
             error_message = response_data.get("message", "")
-            expected_message = "Этот логин уже используется. Попробуйте другой."
-            assert error_message == expected_message, (
-                f"Ожидалось сообщение: '{expected_message}', "
+            assert error_message == CourierErrorMessages.LOGIN_ALREADY_EXISTS, (
+                f"Ожидалось сообщение: '{CourierErrorMessages.LOGIN_ALREADY_EXISTS}', "
                 f"получено: '{error_message}'"
             )

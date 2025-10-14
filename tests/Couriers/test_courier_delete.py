@@ -2,6 +2,7 @@ import pytest
 import allure
 from helpers.courier_generator import CourierGenerator
 from helpers.api_client import ApiClient
+from constants.error_messages import CourierErrorMessages, ResponseMessages
 
 @allure.epic("Courier API")
 @allure.feature("Удаление курьера")
@@ -21,10 +22,11 @@ class TestDeleteCourier:
                 f"Ожидался статус код 200, получен {response.status_code}. "
                 f"Response: {response.text}"
             )
+        
         with allure.step("Проверить поле 'ok' в ответе"):
             response_data = response.json()
-            assert response_data.get("ok") is True, (
-                f"Ожидалось 'ok': true, получено: {response_data}"
+            assert response_data == {"ok": True}, (
+                f"{ResponseMessages.EXPECTED_OK_TRUE}, получено: {response_data}"
             )
     
     
@@ -32,8 +34,8 @@ class TestDeleteCourier:
     @allure.description("Проверка корректной обработки ошибок, при передаче некорректных идентификаторов курьера в запросе")
     @pytest.mark.parametrize('test_case, courier_id, expected_status, expected_error', [
         
-        ('несуществующий id', '12345', 404, "Курьера с таким id нет."),
-        ('пустая строка', "", 404, "Not Found.")
+        ('несуществующий id', '12345', 404, CourierErrorMessages.COURIER_NOT_FOUND),
+        ('пустая строка', "", 404, CourierErrorMessages.NOT_FOUND)
     ])
     def test_delete_courier_invalid_id(self, test_case, courier_id, expected_status, expected_error ):
         with allure.step(f"Отправить запрос на удаление курьера с ID: '{courier_id}'"):
@@ -46,10 +48,10 @@ class TestDeleteCourier:
         
         with allure.step("Проверить сообщение об ошибке"):
             response_data = response.json()
-            expected_message = expected_error
-            assert response_data.get("message") == expected_message, (
-                f"Ожидалось сообщение: '{expected_message}', "
-                f"получено: '{response_data.get('message')}'"
+            error_message = response_data.get("message", "")
+            assert error_message == expected_error, (
+                f"Ожидалось сообщение: {expected_error},"
+                f"получено: '{error_message}'"
             )
             
     @allure.title("Удаление курьера и проверка целостности данных")

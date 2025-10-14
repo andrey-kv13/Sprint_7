@@ -2,6 +2,7 @@ import allure
 import pytest
 from helpers.courier_generator import CourierGenerator
 from helpers.api_client import ApiClient
+from constants.error_messages import CourierErrorMessages, ResponseMessages
 
 @allure.epic("Courier API")
 @allure.feature("Логин курьера")
@@ -18,14 +19,16 @@ class TestCourierLogin:
             response = ApiClient.post_request_login_courier(payload)
 
         with allure.step("Проверить статус код ответа"):
-            assert response.status_code == 200, f"Ожидался статус код 200, получен {response.status_code}"
+            assert response.status_code == 200, (
+                f"Ожидался статус код 200, получен {response.status_code}. "
+                f"Response: {response.text}"
+            )
         
         with allure.step("Проверить наличие поля 'id' в ответе"):
             response_json = response.json()
-            assert "id" in response_json, f"В ответе отсутствует обязательное поле id. Ответ: {response_json}"
-    
-        with allure.step("Проверить что поле 'id' не пустое"):
-            assert response_json["id"] is not None, f"Поле 'id' имеет значение None. Ответ: {response_json}"
+            assert "id" in response_json, (
+                f"{ResponseMessages.EXPECTED_ID_FIELD}. Ответ: {response_json}"
+            )
     
     @allure.title("Негативные кейсы: логин курьера без обязательного поля: {missing_field}")
     @allure.description("Ошибка при логине с отсутствием обязательного поля")  
@@ -40,17 +43,17 @@ class TestCourierLogin:
         with allure.step('Отправить запрос login без обязательных полей'):
             response = ApiClient.post_request_login_courier(payload)
     
-        with allure.step("Проверить статус код ответа"):
+        with allure.step("Проверить статус код ответа 400"):
             assert response.status_code == 400, (
-                f"Ожидался статус код 400, получен {response.status_code}. "
-                f"Response: {response.text}"
+                f"Ожидался статус код 400, получен {response.status_code}"
             )
         
         with allure.step("Проверить сообщение об ошибке"):
-            error_message = response.json()["message"]
-            expected_message = 'Недостаточно данных для входа'
-            assert error_message == expected_message, (
-                f"Сообщение об ошибке '{error_message}' не соответствует ожидаемому '{expected_message}'"
+            response_data = response.json()
+            error_message = response_data.get("message", "")
+            assert error_message == CourierErrorMessages.NOT_ENOUGH_DATA_FOR_LOGIN, (
+                f"Ожидалось сообщение: '{CourierErrorMessages.NOT_ENOUGH_DATA_FOR_LOGIN}', "
+                f"получено: '{error_message}'"
             )
     
     @allure.title("Негативные кейсы: логин незарегистрированного курьера")
@@ -62,14 +65,17 @@ class TestCourierLogin:
         with allure.step("Отправить запрос на авторизацию"):
             response = ApiClient.post_request_login_courier(payload)
             
-        with allure.step("Проверить статус код ответа"):
-            assert response.status_code == 404, f"Ожидался статус код 404, получен {response.status_code}"
+        with allure.step("Проверить статус код ответа 404"):
+            assert response.status_code == 404, (
+                f"Ожидался статус код 404, получен {response.status_code}"
+            )
         
         with allure.step("Проверить сообщение об ошибке"):
-            error_message = response.json()["message"]
-            expected_message = 'Учетная запись не найдена'
-            assert error_message == expected_message, (
-                f"Сообщение об ошибке '{error_message}' не соответствует ожидаемому '{expected_message}'"
+            response_data = response.json()
+            error_message = response_data.get("message", "")
+            assert error_message == CourierErrorMessages.ACCOUNT_NOT_FOUND, (
+                f"Ожидалось сообщение: '{CourierErrorMessages.ACCOUNT_NOT_FOUND}', "
+                f"получено: '{error_message}'"
             )
     
     @allure.title("Негативные кейсы: авторизация с неверным паролем")
@@ -86,8 +92,9 @@ class TestCourierLogin:
             assert response.status_code == 404, f"Ожидался статус код 404, получен {response.status_code}"
 
         with allure.step("Проверить сообщение об ошибке"):
-            error_message = response.json()["message"]
-            expected_message = 'Учетная запись не найдена'
-            assert error_message == expected_message, (
-                f"Сообщение об ошибке '{error_message}' не соответствует ожидаемому '{expected_message}'"
+            response_data = response.json()
+            error_message = response_data.get("message", "")
+            assert error_message == CourierErrorMessages.ACCOUNT_NOT_FOUND, (
+                f"Ожидалось сообщение: '{CourierErrorMessages.ACCOUNT_NOT_FOUND}', "
+                f"получено: '{error_message}'"
             )

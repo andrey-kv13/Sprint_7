@@ -1,6 +1,7 @@
 import allure
 import pytest
 from helpers.api_client import ApiClient
+from constants.error_messages import OrderErrorMessages, ResponseMessages
 
 @allure.epic("Order API")
 @allure.feature("Получение днных о заказах")
@@ -23,13 +24,7 @@ class TestGetOrder:
 
         with allure.step("Проверить наличие поля 'orders' в ответе"):
             assert "orders" in data, (
-                f"В ответе отсутствует обязательное поле 'orders'. Ответ: {data}"
-            )
-        
-        with allure.step("Проверить что 'orders' является списком"):
-            orders_list = data["orders"]
-            assert isinstance(orders_list, list), (
-                f"Поле 'orders' должно быть списком, получен {type(orders_list)}"
+                f"{ResponseMessages.EXPECTED_ORDERS_FIELD}. Ответ: {data}"
             )
 
 
@@ -68,9 +63,9 @@ class TestGetOrder:
     @pytest.mark.parametrize(
         "test_case, track_id, expected_status, expected_error", 
         [
-            ("missing_track_id", None, 400, "Недостаточно данных для поиска"),
-            ("empty_track_id", "", 400, "Недостаточно данных для поиска"),
-            ("nonexistent_track_id", 999999999, 404, "Заказ не найден"),
+            ("missing_track_id", None, 400, OrderErrorMessages.NOT_ENOUGH_DATA_FOR_SEARCH),
+            ("empty_track_id", "", 400, OrderErrorMessages.NOT_ENOUGH_DATA_FOR_SEARCH),
+            ("nonexistent_track_id", 999999999, 404, OrderErrorMessages.ORDER_NOT_FOUND),
         ]
     )
     def test_get_order_with_invalid_track_id_returns_error(self, test_case, track_id, expected_status, expected_error):

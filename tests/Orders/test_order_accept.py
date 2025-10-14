@@ -3,6 +3,7 @@ import pytest
 from helpers.courier_generator import CourierGenerator
 from helpers.order_generator import OrderGenerator
 from helpers.api_client import ApiClient
+from constants.error_messages import OrderErrorMessages, ResponseMessages
 
 
 @allure.epic("Order API")
@@ -35,7 +36,7 @@ class TestOrderAccept:
         with allure.step("Проверить что успешный запрос возвращает {'ok': true}"):
             response_data = response.json()
             assert response_data == {"ok": True}, (
-                f"Ожидалось {{'ok': true}}, получено: {response_data}"
+                f"{ResponseMessages.EXPECTED_OK_TRUE}, получено: {response_data}"
             )
     
     @allure.title("Негативные кейсы: попытка принятия заказа с невалидным ID курьера")
@@ -73,8 +74,8 @@ class TestOrderAccept:
     @pytest.mark.parametrize(
         "test_case, order_id, expected_status, expected_error", 
         [
-            ("empty_order", "", 404, "Not Found."),
-            ("nonexistent_oder_id", 999999999, 404, "Заказа с таким id не существует")
+            ("empty_order", "", 404, OrderErrorMessages.NOT_FOUND),
+            ("nonexistent_oder_id", 999999999, 404, OrderErrorMessages.ORDER_NOT_EXIST)
         ]
     )
         
